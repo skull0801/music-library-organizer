@@ -12,21 +12,21 @@ def organize_music(path, separator = " - "):
             failedSongs.append(song)
             continue
         artist, songName = song.split(separator, maxsplit=1)
-        artistFolder = os.path.join(path, artist).strip()
+        artistFolder = os.path.abspath(os.path.join(path, artist).strip())
         if not os.path.exists(artistFolder):
             os.mkdir(artistFolder)
+            
         songSrc = os.path.join(path, song)
         songDst = os.path.join(artistFolder, song)
         try:
             os.rename(songSrc, songDst)
-        except FileNotFoundError:
+        except FileNotFoundError as error:
             failedSongs.append(song)
         else:
             songsOrganized += 1
+            
+    return songsOrganized, failedSongs
         
-    print("%d songs moved successfully. %d failed."
-          % (songsOrganized, len(failedSongs)))
-    print("The following songs failed: ", failedSongs)
     
 def get_songs(path):
     '''Gets all songs in folder given a path'''
@@ -36,4 +36,8 @@ def get_songs(path):
 if __name__ == '__main__':
     path = input("What folder do you want to search?")
     separator = input("Insert a separator for the artist name and song name: ")
-    organize_music(path, separator)
+    succesful, fails = organize_music(path, separator)
+    print("%d songs moved successfully. %d failed."
+          % (succesful, len(fails)))
+    if len(fails) > 0:
+        print("The following songs failed: ", fails)
