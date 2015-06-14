@@ -20,24 +20,54 @@ def organize_music(path, separator = " - "):
         songDst = os.path.join(artistFolder, song)
         try:
             os.rename(songSrc, songDst)
-        except FileNotFoundError as error:
+        except FileNotFoundError:
+            failedSongs.append(song)
+        except FileExistsError:
             failedSongs.append(song)
         else:
             songsOrganized += 1
             
     return songsOrganized, failedSongs
+
+def deorganize_music(path):
+    '''Undoes what organize_music does if given the same path, use at your own risk'''
+    folders = get_folders(path)
+    failedSongs = []
+    songsDeOrganized = 0
+    for folder in folders:
+        folder = os.path.join(path, folder)
+        songs = get_songs(folder)
+        for song in songs:
+            try:
+                os.rename(os.path.join(folder, song), os.path.join(path, song))
+            except FileNotFoundError:
+                failedSongs.append(song)
+            else:
+                songsDeOrganized += 1
+
+            if os.listdir(folder) == []:
+                os.rmdir(folder)
+
+    return songsDeOrganized, failedSongs
         
+
+def get_folders(path):
+    '''Gets subfolders of a folder'''
+    return [folder for folder in os.listdir(path)
+            if os.path.isdir(os.path.join(path, folder))]
     
 def get_songs(path):
     '''Gets all songs in folder given a path'''
     return [file for file in os.listdir(path)
-             if os.path.isfile(os.path.join(path, file)) and file[-3:] == 'mp3']
+            if os.path.isfile(os.path.join(path, file)) and file[-3:] == 'mp3']
 
 if __name__ == '__main__':
     path = input("What folder do you want to search?")
     separator = input("Insert a separator for the artist name and song name: ")
     succesful, fails = organize_music(path, separator)
+    #succesful, fails = deorganize_music(path)
     print("%d songs moved successfully. %d failed."
           % (succesful, len(fails)))
     if len(fails) > 0:
         print("The following songs failed: ", fails)
+    
