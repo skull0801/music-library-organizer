@@ -8,7 +8,7 @@ def organize_music(path, separator = " - "):
     failedSongs = []
     for song in songs:
         song = song.strip()
-        if song.rfind(separator) == -1:
+        if song.find(separator) == -1:
             failedSongs.append(song)
             continue
         artist, songName = song.split(separator, maxsplit=1)
@@ -20,36 +20,43 @@ def organize_music(path, separator = " - "):
         songDst = os.path.join(artistFolder, song)
         try:
             os.rename(songSrc, songDst)
-        except FileNotFoundError:
+        except FileNotFoundError as error:
+            print(error)
             failedSongs.append(song)
-        except FileExistsError:
+        except FileExistsError as error:
+            print(error)
             failedSongs.append(song)
         else:
             songsOrganized += 1
             
     return songsOrganized, failedSongs
 
-def deorganize_music(path):
-    '''Undoes what organize_music does if given the same path, use at your own risk'''
+def deorganize_music(path, separator):
+    '''Undoes what organize_music does if given the same path and separator, use at your own risk'''
     folders = get_folders(path)
     failedSongs = []
     songsDeOrganized = 0
     for folder in folders:
-        folder = os.path.join(path, folder)
-        songs = get_songs(folder)
+        folderPath = os.path.join(path, folder)
+        songs = get_songs(folderPath)
         for song in songs:
-            try:
-                os.rename(os.path.join(folder, song), os.path.join(path, song))
-            except FileNotFoundError:
-                failedSongs.append(song)
-            else:
-                songsDeOrganized += 1
+            if should_remove_from_folder(song, separator, folder):
+                try:
+                    os.rename(os.path.join(folderPath, song), os.path.join(path, song))
+                except FileNotFoundError:
+                    failedSongs.append(song)
+                except FileExistsError:
+                    failedSongs.append(song)
+                else:
+                    songsDeOrganized += 1
 
-            if os.listdir(folder) == []:
-                os.rmdir(folder)
+                if os.listdir(folderPath) == []:
+                    os.rmdir(folderPath)
 
     return songsDeOrganized, failedSongs
-        
+
+def should_remove_from_folder(song, separator, folder):
+    return song.split(separator, maxsplit=1)[0].upper().strip('. ') == folder.upper()
 
 def get_folders(path):
     '''Gets subfolders of a folder'''
@@ -62,10 +69,10 @@ def get_songs(path):
             if os.path.isfile(os.path.join(path, file)) and file[-3:] == 'mp3']
 
 if __name__ == '__main__':
-    path = input("What folder do you want to search?")
+    path = input("What folder do you want to search?").strip()
     separator = input("Insert a separator for the artist name and song name: ")
     succesful, fails = organize_music(path, separator)
-    #succesful, fails = deorganize_music(path)
+    #succesful, fails = deorganize_music(path, separator)
     print("%d songs moved successfully. %d failed."
           % (succesful, len(fails)))
     if len(fails) > 0:
