@@ -50,8 +50,8 @@ def deorganize_music(path, separator):
                 else:
                     songsDeOrganized += 1
 
-                if os.listdir(folderPath) == []:
-                    os.rmdir(folderPath)
+        if os.listdir(folderPath) == []:
+            os.rmdir(folderPath)
 
     return songsDeOrganized, failedSongs
 
